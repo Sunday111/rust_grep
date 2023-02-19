@@ -4,6 +4,10 @@ use std::fmt::{Display, Write};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
+mod regex_slice_iterator;
+
+use regex_slice_iterator::RegexSliceIterator;
+
 #[derive(Debug)]
 pub struct GrepConfig {
     pub pattern: String,
@@ -37,9 +41,10 @@ pub fn grep(file: File, pattern: Regex) -> Result<()> {
 
     while reader.read_line(&mut line_buffer).to_grep_result()? > 0 {
         let line = line_buffer.trim_end_matches('\n');
+
         let mut last_index = None;
         let mut line_index_str = String::new();
-        for rmatch in pattern.find_iter(&line) {
+        for rmatch in RegexSliceIterator::new(&pattern, line) {
             if let Some(index) = last_index {
                 print!("{}", &line[index..rmatch.start()]);
             } else {
