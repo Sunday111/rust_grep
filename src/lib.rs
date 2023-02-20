@@ -2,11 +2,12 @@ use colored::{self, Colorize};
 use regex::Regex;
 use std::fmt::{Display, Write};
 use std::fs::File;
-use std::io::{BufRead, BufReader};
 
 mod regex_slice_iterator;
+mod buffer_lines_iterator;
 
 use regex_slice_iterator::RegexSliceIterator;
+use buffer_lines_iterator::BufferLinesIterator;
 
 #[derive(Debug)]
 pub struct GrepConfig {
@@ -35,12 +36,9 @@ impl GrepConfig {
 }
 
 pub fn grep(file: File, pattern: Regex) -> Result<()> {
-    let mut reader = BufReader::new(file);
-    let mut line_buffer = String::new();
     let mut line_index:u32 = 0;
-
-    while reader.read_line(&mut line_buffer).to_grep_result()? > 0 {
-        let line = line_buffer.trim_end_matches('\n');
+    for line in BufferLinesIterator::new(file) {
+        let line = line.trim_end_matches('\n');
 
         let mut last_index = None;
         let mut line_index_str = String::new();
@@ -60,7 +58,6 @@ pub fn grep(file: File, pattern: Regex) -> Result<()> {
         }
 
         line_index += 1;
-        line_buffer.clear();
     }
     
     Ok(())
